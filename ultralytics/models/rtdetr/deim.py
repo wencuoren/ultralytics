@@ -379,7 +379,6 @@ class RTDETRDEIMDataset(RTDETRDataset):
             hyp.mosaic = compute_deim_scheduled_prob(self.mosaic_prob, epoch, stop)
             hyp.mixup = compute_deim_scheduled_prob(self.mixup_prob, epoch, mixup_stop)
             hyp.copy_paste = compute_deim_scheduled_prob(self.copyblend_prob, epoch, copy_paste_stop)
-            hyp.scale = compute_deim_scheduled_prob(float(self.base_hyp.scale), epoch, stop)
             if epoch >= stop:
                 # Match DEIM's final no-aug tail by neutralizing all remaining v8 augmentations.
                 hyp.mosaic = 0.0
