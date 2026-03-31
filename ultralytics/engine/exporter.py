@@ -767,40 +767,17 @@ class Exporter:
     def export_litert(self, prefix=colorstr("LiteRT:")):
         """Export YOLO model to LiteRT format using litert_torch with optional FP16/INT8 quantization."""
         assert LINUX and not MACOS and not WINDOWS and not ARM64, "LiteRT export only supported on Linux x86"
+        from ultralytics.utils.export.litert import torch2litert
 
-        check_requirements("litert-torch-nightly")
-        import litert_torch
-
-        LOGGER.info(f"\n{prefix} starting export with litert_torch {litert_torch.__version__}...")
-        f = Path(str(self.file).replace(self.file.suffix, "_litert_model"))
-        f.mkdir(parents=True, exist_ok=True)
-
-        sample_inputs = (self.im,)
-        edge_model = litert_torch.convert(self.model, sample_inputs)
-
-        if self.args.int8:
-            tflite_file = f / f"{self.file.stem}_int8.tflite"  # fp32 in/out
-        elif self.args.half:
-            tflite_file = f / f"{self.file.stem}_float16.tflite"  # fp32 in/out
-        else:
-            tflite_file = f / f"{self.file.stem}_float32.tflite"
-        edge_model.export(tflite_file)
-
-        # Apply quantization using ai-edge-quantizer-nightly
-        if self.args.int8 or self.args.half:
-            check_requirements("ai-edge-quantizer-nightly")
-            from ai_edge_quantizer import quantizer, recipe
-
-            LOGGER.info(f"{prefix} applying {'INT8' if self.args.int8 else 'FP16'} quantization...")
-            qt = quantizer.Quantizer(str(tflite_file))
-            if self.args.int8:
-                qt.load_quantization_recipe(recipe.dynamic_wi8_afp32())
-            else:  # half (FP16) - use weight-only int8 for size reduction while keeping float compute
-                qt.load_quantization_recipe(recipe.weight_only_wi8_afp32())
-            qt.quantize().export_model(str(tflite_file), overwrite=True)
-
-        YAML.save(f / "metadata.yaml", self.metadata)
-        return f
+        return torch2litert(
+            self.model,
+            self.im,
+            self.file,
+            half=self.args.half,
+            int8=self.args.int8,
+            metadata=self.metadata,
+            prefix=prefix,
+        )
 
     @try_export
     def export_mnn(self, prefix=colorstr("MNN:")):
