@@ -131,7 +131,7 @@ The Platform supports two annotation formats plus raw uploads: [Ultralytics YOLO
 
 !!! tip "Flat Directory Structure"
 
-    You can also upload images without the train/val folder structure. Images uploaded without split folders are assigned to the `train` split by default. You can reassign them later using the bulk move-to-split feature.
+    You can also upload images without the train/val folder structure. When no split folder is detected, images are treated as `train`. For most non-classify datasets, if no `val` images exist after ingest, the worker automatically reassigns about 20% of `train` images to `val`.
 
 !!! tip "Format Auto-Detection"
 
@@ -256,6 +256,34 @@ Filter images by their dataset split:
 | **Train** | Used for model training             |
 | **Val**   | Used for validation during training |
 | **Test**  | Used for final evaluation           |
+
+### Training Readiness
+
+Each dataset shows a training readiness badge:
+
+- **Ready**: The dataset meets the minimum requirements for training.
+- **Not Ready**: One or more training requirements are missing.
+
+To train on a dataset, processing must be complete and the dataset status must be `ready`.
+
+After that, the dataset must also:
+
+1. Have at least 1 image in the `train` split
+2. Have at least 1 image in the `val` or `test` split
+3. Have at least 1 labeled image
+
+If your dataset shows **Not Ready**, open the **Images** tab and use the message in the badge popover to identify what is missing.
+
+Common fixes:
+
+- **Dataset is still processing**: Wait for ingest to finish until the dataset status changes to `ready`.
+- **No training images**: Move at least one image to the `train` split using [Bulk Move to Split](#bulk-move-to-split).
+- **No validation images**: Move at least one image to the `val` or `test` split using [Bulk Move to Split](#bulk-move-to-split), or use [Split Redistribution](#split-redistribution) to rebalance the entire dataset.
+- **No labeled images**: Add annotations in the [annotation editor](annotation.md) or upload labeled data.
+
+!!! tip "Why this happens often after upload"
+
+    If your upload does not include split folders, the worker treats images as `train` first. For most non-classify datasets it then auto-creates a `val` split if none exists, but you can still rebalance splits manually later with [Split Redistribution](#split-redistribution).
 
 ## Dataset Tabs
 

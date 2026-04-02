@@ -52,7 +52,7 @@ Choose a dataset to train on (see [Datasets](../data/datasets.md)):
 
 !!! note "Dataset Requirements"
 
-    Datasets must be in `ready` status with at least 1 image in the train split, 1 image in the validation or test split, and at least 1 labeled image.
+    Datasets must be in `ready` status with at least 1 image in the train split, 1 image in the validation or test split, and at least 1 labeled image. If your dataset shows **Not Ready** or a message such as `No validation images`, see [Training Readiness](../data/datasets.md#training-readiness) for the required conditions and resolution steps.
 
 !!! warning "Task Mismatch"
 
