@@ -51,7 +51,7 @@ def onnx2deepx(
             "dataset_path": str(dataset.dataset.img_path),
             "file_extensions": ["jpeg", "jpg", "png", "JPEG"],
             "preprocessings": [
-                {"resize": {"mode": "pad", "size": 640, "pad_location": "edge", "pad_value": [114, 114, 114]}},
+                {"resize": {"mode": "pad", "size": imgsz[0], "pad_location": "edge", "pad_value": [114, 114, 114]}},
                 {"div": {"x": 255.0}},
                 {"convertColor": {"form": "BGR2RGB"}},
                 {"transpose": {"axis": [2, 0, 1]}},
