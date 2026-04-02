@@ -194,14 +194,42 @@ class OCSORT(BYTETracker):
         return [OCSortTrack(xywh, s, c, self.delta_t) for (xywh, s, c) in zip(bboxes, results.conf, results.cls)]
 
     def get_dists(self, tracks, detections):
-        """Compute cost matrix with Buffered IoU distance and OCM velocity direction consistency cost."""
+        """Compute cost matrix with Buffered IoU, OCM velocity cost, and pseudo-depth penalty."""
         dists = self._biou_distance(tracks, detections)
         if self.args.fuse_score:
             dists = matching.fuse_score(dists, detections)
 
         vel_dists = self._velocity_direction_cost(tracks, detections)
         dists = dists + self.inertia * vel_dists
+
+        # Pseudo-depth gating (SparseTrack, ACMMM'23): penalize depth-inconsistent matches
+        depth_penalty = self._pseudo_depth_penalty(tracks, detections)
+        dists = np.where(depth_penalty > 1.5, 1.0, dists)
         return dists
+
+    @staticmethod
+    def _pseudo_depth_penalty(tracks, detections):
+        """Compute pseudo-depth difference between tracks and detections.
+
+        Uses log(height) as a depth proxy — objects at similar depths have similar box heights.
+        Large height ratio differences indicate the objects are at very different depths.
+
+        Returns:
+            (np.ndarray): Matrix of |log(h_track) - log(h_det)| values.
+        """
+        n_tracks, n_dets = len(tracks), len(detections)
+        if n_tracks == 0 or n_dets == 0:
+            return np.zeros((n_tracks, n_dets), dtype=np.float32)
+
+        def _get_height(item):
+            if isinstance(item, np.ndarray):
+                return max(item[3] - item[1], 1.0) if len(item) == 4 else max(item[3], 1.0)
+            xyxy = item.xyxy
+            return max(xyxy[3] - xyxy[1], 1.0)
+
+        track_h = np.array([np.log(_get_height(t)) for t in tracks], dtype=np.float32)
+        det_h = np.array([np.log(_get_height(d)) for d in detections], dtype=np.float32)
+        return np.abs(track_h[:, None] - det_h[None, :])
 
     @staticmethod
     def _biou_distance(tracks, detections, buffer_ratio=0.5):
