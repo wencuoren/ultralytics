@@ -50,7 +50,7 @@ def torch2onnx(
     opset: int = 14,
     input_names: list[str] = ["images"],
     output_names: list[str] = ["output0"],
-    dynamic: bool | dict = False,
+    dynamic: dict | None = None,
 ) -> None:
     """Export a PyTorch model to ONNX format.
 
@@ -61,7 +61,7 @@ def torch2onnx(
         opset (int): ONNX opset version to use for export.
         input_names (list[str]): List of input tensor names.
         output_names (list[str]): List of output tensor names.
-        dynamic (bool | dict, optional): Whether to enable dynamic axes.
+        dynamic (dict | None): Dictionary specifying dynamic axes for inputs and outputs.
 
     Notes:
         Setting `do_constant_folding=True` may cause issues with DNN inference for torch>=1.12.
@@ -76,7 +76,7 @@ def torch2onnx(
         do_constant_folding=True,  # WARNING: DNN inference with torch>=1.12 may require do_constant_folding=False
         input_names=input_names,
         output_names=output_names,
-        dynamic_axes=dynamic or None,
+        dynamic_axes=dynamic,
         **kwargs,
     )
 
