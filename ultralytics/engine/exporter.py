@@ -692,7 +692,7 @@ class Exporter:
     @try_export
     def export_openvino(self, prefix=colorstr("OpenVINO:")):
         """Export YOLO model to OpenVINO format."""
-        from ultralytics.utils.export import torch2openvino
+        from ultralytics.utils.export.openvino import torch2openvino
 
         # OpenVINO <= 2025.1.0 error on macOS 15.4+: https://github.com/openvinotoolkit/openvino/issues/30023"
         check_requirements("openvino>=2025.2.0" if MACOS and MACOS_VERSION >= "15.4" else "openvino>=2024.0.0")
@@ -996,9 +996,7 @@ class Exporter:
         """Export YOLO model to TensorFlow GraphDef *.pb format https://github.com/leimao/Frozen-Graph-TensorFlow."""
         from ultralytics.utils.export.tensorflow import keras2pb
 
-        f = self.file.with_suffix(".pb")
-        keras2pb(keras_model, f, prefix)
-        return f
+        return keras2pb(keras_model, output_file=self.file.with_suffix(".pb"), prefix=prefix)
 
     @try_export
     def export_tflite(self, prefix=colorstr("TensorFlow Lite:")):
@@ -1072,10 +1070,9 @@ class Exporter:
         from ultralytics.utils.export.tensorflow import tflite2edgetpu
 
         LOGGER.info(f"\n{prefix} starting export with Edge TPU compiler {ver}...")
-        tflite2edgetpu(tflite_file=tflite_model, output_dir=tflite_model.parent, prefix=prefix)
-        f = str(tflite_model).replace(".tflite", "_edgetpu.tflite")  # Edge TPU model
-        self._add_tflite_metadata(f)
-        return f
+        output_file = tflite2edgetpu(tflite_file=tflite_model, output_dir=tflite_model.parent, prefix=prefix)
+        self._add_tflite_metadata(output_file)
+        return output_file
 
     @try_export
     def export_tfjs(self, prefix=colorstr("TensorFlow.js:")):
@@ -1083,12 +1080,15 @@ class Exporter:
         check_requirements("tensorflowjs")
         from ultralytics.utils.export.tensorflow import pb2tfjs
 
-        f = str(self.file).replace(self.file.suffix, "_web_model")  # js dir
-        f_pb = str(self.file.with_suffix(".pb"))  # *.pb path
-        pb2tfjs(pb_file=f_pb, output_dir=f, half=self.args.half, int8=self.args.int8, prefix=prefix)
-        # Add metadata
-        YAML.save(Path(f) / "metadata.yaml", self.metadata)  # add metadata.yaml
-        return f
+        output_dir = pb2tfjs(
+            pb_file=str(self.file.with_suffix(".pb")),
+            output_dir=str(self.file).replace(self.file.suffix, "_web_model/"),
+            half=self.args.half,
+            int8=self.args.int8,
+            prefix=prefix,
+        )
+        YAML.save(Path(output_dir) / "metadata.yaml", self.metadata)
+        return output_dir
 
     @try_export
     def export_rknn(self, prefix=colorstr("RKNN:")):

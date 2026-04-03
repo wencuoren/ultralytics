@@ -59,7 +59,7 @@ def _tf_kpts_decode(self, kpts: torch.Tensor, is_pose26: bool = False) -> torch.
 
 def onnx2saved_model(
     onnx_file: str,
-    output_dir: Path,
+    output_dir: Path | str,
     int8: bool = False,
     images: np.ndarray = None,
     disable_group_convolution: bool = False,
@@ -69,7 +69,7 @@ def onnx2saved_model(
 
     Args:
         onnx_file (str): ONNX file path.
-        output_dir (Path): Output directory path for the SavedModel.
+        output_dir (Path | str): Output directory path for the SavedModel.
         int8 (bool, optional): Enable INT8 quantization. Defaults to False.
         images (np.ndarray, optional): Calibration images for INT8 quantization in BHWC format.
         disable_group_convolution (bool, optional): Disable group convolution optimization. Defaults to False.
@@ -133,13 +133,16 @@ def onnx2saved_model(
     return keras_model
 
 
-def keras2pb(keras_model, file: Path | str, prefix=""):
+def keras2pb(keras_model, output_file: Path | str, prefix="") -> str:
     """Convert a Keras model to TensorFlow GraphDef (.pb) format.
 
     Args:
         keras_model (keras.Model): Keras model to convert to frozen graph format.
-        file (Path | str): Output file path (suffix will be changed to .pb).
+        output_file (Path | str): Output file path (suffix will be changed to .pb).
         prefix (str, optional): Logging prefix. Defaults to "".
+
+    Returns:
+        (str): Path to the exported ``.pb`` file.
 
     Notes:
         Creates a frozen graph by converting variables to constants for inference optimization.
@@ -152,17 +155,23 @@ def keras2pb(keras_model, file: Path | str, prefix=""):
     m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
     frozen_func = convert_variables_to_constants_v2(m)
     frozen_func.graph.as_graph_def()
-    file = Path(file)
-    tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(file.parent), name=file.name, as_text=False)
+    output_file = Path(output_file)
+    tf.io.write_graph(
+        graph_or_graph_def=frozen_func.graph, logdir=str(output_file.parent), name=output_file.name, as_text=False
+    )
+    return str(output_file)
 
 
-def tflite2edgetpu(tflite_file: str | Path, output_dir: str | Path, prefix: str = ""):
+def tflite2edgetpu(tflite_file: str | Path, output_dir: str | Path, prefix: str = "") -> str:
     """Convert a TensorFlow Lite model to Edge TPU format using the Edge TPU compiler.
 
     Args:
         tflite_file (str | Path): Path to the input TensorFlow Lite (.tflite) model file.
         output_dir (str | Path): Output directory path for the compiled Edge TPU model.
         prefix (str, optional): Logging prefix. Defaults to "".
+
+    Returns:
+        (str): Path to the exported Edge TPU model file.
 
     Notes:
         Requires the Edge TPU compiler to be installed. The function compiles the TFLite model
@@ -181,9 +190,10 @@ def tflite2edgetpu(tflite_file: str | Path, output_dir: str | Path, prefix: str 
     )
     LOGGER.info(f"{prefix} running '{cmd}'")
     subprocess.run(cmd, shell=True)
+    return str(Path(output_dir) / f"{Path(tflite_file).stem}_edgetpu.tflite")
 
 
-def pb2tfjs(pb_file: str, output_dir: str, half: bool = False, int8: bool = False, prefix: str = ""):
+def pb2tfjs(pb_file: str, output_dir: str, half: bool = False, int8: bool = False, prefix: str = "") -> str:
     """Convert a TensorFlow GraphDef (.pb) model to TensorFlow.js format.
 
     Args:
@@ -192,6 +202,9 @@ def pb2tfjs(pb_file: str, output_dir: str, half: bool = False, int8: bool = Fals
         half (bool, optional): Enable FP16 quantization. Defaults to False.
         int8 (bool, optional): Enable INT8 quantization. Defaults to False.
         prefix (str, optional): Logging prefix. Defaults to "".
+
+    Returns:
+        (str): Path to the exported TensorFlow.js model directory.
 
     Notes:
         Requires tensorflowjs package. Uses tensorflowjs_converter command-line tool for conversion.
@@ -205,8 +218,8 @@ def pb2tfjs(pb_file: str, output_dir: str, half: bool = False, int8: bool = Fals
     LOGGER.info(f"\n{prefix} starting export with tensorflowjs {tfjs.__version__}...")
 
     gd = tf.Graph().as_graph_def()  # TF GraphDef
-    with open(pb_file, "rb") as file:
-        gd.ParseFromString(file.read())
+    with open(pb_file, "rb") as f:
+        gd.ParseFromString(f.read())
     outputs = ",".join(gd_outputs(gd))
     LOGGER.info(f"\n{prefix} output node names: {outputs}")
 
@@ -221,6 +234,7 @@ def pb2tfjs(pb_file: str, output_dir: str, half: bool = False, int8: bool = Fals
 
     if " " in output_dir:
         LOGGER.warning(f"{prefix} your model may not work correctly with spaces in path '{output_dir}'.")
+    return str(output_dir)
 
 
 def gd_outputs(gd):
