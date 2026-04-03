@@ -601,9 +601,9 @@ class Exporter:
         from ultralytics.utils.export.torchscript import torch2torchscript
 
         return torch2torchscript(
-            NMSModel(self.model, self.args) if self.args.nms else self.model,
-            self.im,
-            self.file,
+            model=NMSModel(self.model, self.args) if self.args.nms else self.model,
+            im=self.im,
+            output_file=self.file.with_suffix(".torchscript"),
             optimize=self.args.optimize,
             metadata=self.metadata,
             prefix=prefix,
