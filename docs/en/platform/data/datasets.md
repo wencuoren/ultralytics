@@ -131,7 +131,7 @@ The Platform supports two annotation formats plus raw uploads: [Ultralytics YOLO
 
 !!! tip "Flat Directory Structure"
 
-    You can also upload images without the train/val folder structure. When no split folder is detected, images are treated as `train`. For most non-classify datasets, if no `val` images exist after ingest, the worker automatically reassigns about 20% of `train` images to `val`.
+    You can also upload images without the train/val folder structure. When no split folder is detected, images are treated as `train`. For most non-classify datasets, if no `val` images exist after ingest, the worker automatically reassigns about 20% of `train` images to `val`. You can reassign them later using the bulk move-to-split feature.
 
 !!! tip "Format Auto-Detection"
 
