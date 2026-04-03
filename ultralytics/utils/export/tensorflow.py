@@ -133,12 +133,12 @@ def onnx2saved_model(
     return keras_model
 
 
-def keras2pb(keras_model, file: Path, prefix=""):
+def keras2pb(keras_model, file: Path | str, prefix=""):
     """Convert a Keras model to TensorFlow GraphDef (.pb) format.
 
     Args:
         keras_model (keras.Model): Keras model to convert to frozen graph format.
-        file (Path): Output file path (suffix will be changed to .pb).
+        file (Path | str): Output file path (suffix will be changed to .pb).
         prefix (str, optional): Logging prefix. Defaults to "".
 
     Notes:
@@ -152,6 +152,7 @@ def keras2pb(keras_model, file: Path, prefix=""):
     m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
     frozen_func = convert_variables_to_constants_v2(m)
     frozen_func.graph.as_graph_def()
+    file = Path(file)
     tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(file.parent), name=file.name, as_text=False)
 
 
