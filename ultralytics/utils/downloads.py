@@ -454,11 +454,12 @@ def attempt_download_asset(
     file = checks.check_yolov5u_filename(file)
     file = Path(file.strip().replace("'", ""))
     weights_dir = Path(SETTINGS["weights_dir"])
-    download_file = weights_dir / file if file.parent == Path(".") else file
+    use_weights_dir = file.parent == Path(".") and file.suffix in {".pt", ".pth", ".ts"}
+    download_file = weights_dir / file if use_weights_dir else file
     if file.exists():
         return str(file)
-    elif (weights_dir / file).exists():
-        return str(weights_dir / file)
+    elif use_weights_dir and download_file.exists():
+        return str(download_file)
     else:
         # URL specified
         name = Path(parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
