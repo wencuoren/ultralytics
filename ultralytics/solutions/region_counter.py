@@ -126,6 +126,7 @@ class RegionCounter(BaseSolution):
                 margin=self.line_width * 4,
                 shape="rect",
             )
+            self.region_counts[region["name"]] = region["counts"]  # Update the results first
             region["counts"] = 0  # Reset for next frame
         plot_im = annotator.result()
         self.display_output(plot_im)
